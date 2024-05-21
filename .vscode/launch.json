@@ -1,0 +1,28 @@
+{  
+"configurations": [
+{
+    "name": "(gdb) Launch",
+    "type": "cppdbg",
+    "request": "launch",
+    "program": "${workspaceFolder}/build/headercompression",
+    //"args": ["host 11.0.0.2 nodeType server hostPort 5567 clientAddress 11.0.0.2 clientPort 6687"],
+    "args": ["host", "11.0.0.2",
+           "nodeType", "server", 
+           "hostPort", "55671",
+           "clientAddress", "11.0.0.3",
+           "clientPort", "48713"],
+    "stopAtEntry": false,
+    "cwd": "${fileDirname}",
+    "environment": [],
+    "externalConsole": false,
+    "MIMode": "gdb",
+    "setupCommands": [
+        {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+        }
+    ]
+}
+],
+  }

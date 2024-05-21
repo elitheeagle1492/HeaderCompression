@@ -1,0 +1,12 @@
+{
+    "name": "Ubuntu",
+    "build": { "dockerfile": "Dockerfile" },
+    "runArgs": ["--privileged",
+     "--network=br0"],
+    "customizations": {
+      "vscode": {
+
+      }
+      
+    }
+  }
