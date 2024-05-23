@@ -23,13 +23,13 @@ int flags;
 int offset;
 int timeToLive;
 int protocal;
-int headerchecksum;
+int m_headerchecksum;
 int sourceIp;
 int destinationIP;
 bool valid;
 
 
-IPHeader(std::vector<unsigned char> message):Message(IPHeaderSize),
+IPHeader(std::vector<unsigned char>& message):Message(IPHeaderSize),
           version(0),
           HLEN(0),
           TypeOfService(0),
@@ -39,13 +39,13 @@ IPHeader(std::vector<unsigned char> message):Message(IPHeaderSize),
           offset(0), //changes THis needs to be updated if we break packet appart 
           timeToLive(0),
           protocal(0),
-          headerchecksum(0), //changes
+          m_headerchecksum(0), //changes
           sourceIp(0),
           destinationIP(0),
           valid(true)
 {
   //first 4 bytes out of tunnel are not IPHeader more research required.
-  std::copy(message.begin() + 4,message.begin() + 24,m_header.data());
+  std::copy(message.begin(),message.begin() + IPHeaderSize,m_header.data());
   unpack(version, 4);
   unpack(HLEN, 4);
   unpack(TypeOfService,8);
@@ -55,18 +55,18 @@ IPHeader(std::vector<unsigned char> message):Message(IPHeaderSize),
   unpack(offset,13);
   unpack(timeToLive,8);
   unpack(protocal,8);
-  unpack(headerchecksum,16);
+  unpack(m_headerchecksum,16);
   unpack(sourceIp,32);
   unpack(destinationIP,32);
 
 
   //Hack to zero out checksum
-  m_header[1] = 0;
+  m_header[10] = 0;
   m_header[11] = 0;
 
-  if(calculateCheckSum(headerchecksum))
+  if(calculateCheckSum(m_headerchecksum))
   {
-    valid = false;
+    valid = true;
   }
 
 }
@@ -79,15 +79,16 @@ IPHeader( std::string sourceIpaddress,
           int flags = 0,
           int offset = 0):Message(20),
           version(4),
-          HLEN(4),
-          TypeOfService(4),
+          HLEN(5),
+          TypeOfService(0),
+          ECN(0),
           totalLengh(totalLengh), //changes
-          identification(identification), 
-          flags(0), //changes 
+          identification(1542), 
+          flags(2), //changes 
           offset(0), //changes THis needs to be updated if we break packet appart 
-          timeToLive(1),
+          timeToLive(64),
           protocal(17),
-          headerchecksum(0), //changes
+          m_headerchecksum(0), //changes
           sourceIp(0),
           destinationIP(0)
           {
@@ -119,14 +120,20 @@ bool calculateCheckSum(u_int16_t headerchecksum )
 
 void addsum()
 {
-   unsigned int total = 0;
-   for(auto& iter : m_header)
-   {
-        total += (int)iter;
+   u_int32_t total = 0;
+   for(int i = 0; i < 20; i= i+2)
+   {  
+     
+        u_int16_t value = m_header[i] << 8 ;
+        value = value | m_header[i +1]; 
+        total += value;
    } 
-   headerchecksum = (~total) & 0xFFFF;
-   pack(headerchecksum,80,16);
-
+  u_int16_t headerchecksum = total & 0xFFFF;
+  u_int16_t extra = total >> 16;
+  headerchecksum = headerchecksum + extra;
+  headerchecksum = ~headerchecksum;
+  pack(headerchecksum,80,16);
+  m_headerchecksum = headerchecksum;
 }
 
 void headerpack()

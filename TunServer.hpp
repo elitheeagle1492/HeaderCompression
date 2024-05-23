@@ -55,29 +55,20 @@ public:
         { 
             while(true)
             {
-            std::vector<unsigned char> bufferHeader(IPHeaderSize+4);
+            std::vector<unsigned char> bufferHeader(1024);
             int result = read(m_fd,bufferHeader.data(),bufferHeader.size());
             if(result <= 0)
             {
                 continue;
             }
-            std::string print = "s";
-            for(auto& iter : bufferHeader)
-            {
-
-            print = print + std::to_string(char(iter));
-            }
-            std::cout << print << std::endl;
-
+            bufferHeader.erase(bufferHeader.begin(),bufferHeader.begin() + 4);
             IPHeader header(bufferHeader);
             if(header.valid)
             {   
                 std::vector<unsigned char> bufferWholeMessage(header.totalLengh);
-                result = read(m_fd,bufferWholeMessage.data(),bufferWholeMessage.size());
-                if(result <= 0)
-                {
-                    continue;
-                }
+                std::copy(bufferHeader.data(),bufferHeader.data() + header.totalLengh , bufferWholeMessage.data());
+
+
                 header.m_body = bufferWholeMessage;
                 std::lock_guard<std::mutex> lk(m_incomeingQueue);
                 tunnelQueue.push(header);

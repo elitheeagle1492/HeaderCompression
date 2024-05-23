@@ -17,7 +17,7 @@ Packet(std::string sourceIpaddress,
        int destinationPort,
        int totalLengh,
        std::vector<unsigned char>& payload):ipheader(sourceIpaddress,destinationIpaddress,totalLengh),
-       udpheader(sourcePort,
+       udpheader("","",sourcePort,
            destinationPort,
            totalLengh - 20),
            m_payload(totalLengh, 0)

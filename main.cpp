@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 
      std::thread tunThread (&IPServer::runTun, server.get());
      std::thread sendThread (&IPServer::run, server.get());
-     //std::thread listenThread (&IPServer::runListen, server.get());
+     std::thread listenThread (&IPServer::runListen, server.get());
 
      tunThread.join();
 

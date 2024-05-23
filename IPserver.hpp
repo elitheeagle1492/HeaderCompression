@@ -86,7 +86,6 @@ public:
              IPHeader message = m_client->listen();
              flags = message.flags;
              fragments.push_back(message);
-           
           }
           defragment(fragments);   
               
@@ -102,13 +101,14 @@ void defragment(std::vector<IPHeader>& data)
     IPHeader ipHeader(message);
     UDPHeader UdpHeader(message);
 
-    m_server->send(message,ipHeader.destinationIP,UdpHeader.destinationPort);
+    m_server->sendtoRaw(message,ipHeader.destinationIP,UdpHeader.destinationPort);
 }
 
 
-void fragment(byteVector& data)
+void fragment(byteVector& data2)
 {
-    
+    byteVector data(13,0);
+    std::copy(data2.end()-13, data2.end(), data.data());
     size_t byteCount = data.size();
 
     size_t numberOfPacks = byteCount/m_mtu + ((byteCount % m_mtu) != 0);
@@ -126,26 +126,31 @@ void fragment(byteVector& data)
             {
                 flags = 3;
             }
-            IPHeader headerInstance(m_hostName, m_clientAddress, length + m_headerSize,identification,flags,fragmentCount);
+            IPHeader headerInstance("3.0.0.11","2.0.0.11", length + m_headerSize,identification,flags,fragmentCount);
             headerInstance.headerpack();
             headerInstance.addsum();
 
-            fragmentCount = (length + m_udpHeaderSize) / 8;
+            // IPHeader headerInstance2(m_hostName, m_clientAddress, length + m_headerSize,identification,flags,fragmentCount);
+            // headerInstance2.headerpack();
+            // headerInstance2.addsum();
+            // fragmentCount = (length + m_udpHeaderSize) / 8;
 
-            UDPHeader udpHeader(m_hostPort,m_clientPort, length + m_udpHeaderSize);
-
+            UDPHeader udpHeader( "3.0.0.11","2.0.0.11",m_hostPort,m_clientPort, length + m_udpHeaderSize);
+            udpHeader.m_body = data;
+            udpHeader.addsum();
             byteVector message(length + m_headerSize);
 
             std::copy(headerInstance.m_header.begin(), headerInstance.m_header.end(), message.data());
+            IPHeader headerInstance2(headerInstance.m_header);
 
-            std::copy(udpHeader.m_header.begin(), udpHeader.m_header.end(), message.data() + m_ipHeaderSize);
+            std::copy(udpHeader.m_header.begin()+12, udpHeader.m_header.end(), message.data() + m_ipHeaderSize);
 
             std::copy(data.begin() + packed, data.begin() + length, message.data() + m_headerSize);
 
             packed +=length;
             identification++;
 
-            m_server->send(message, headerInstance.destinationIP, m_clientPort);
+            m_server->sendtoRaw(message, headerInstance2.destinationIP , m_clientPort);
     }
 }
 };
